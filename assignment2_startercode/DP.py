@@ -25,12 +25,8 @@ class DynamicProgramming:
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		policy = np.zeros(self.nStates)
-		V = np.zeros(self.nStates)
-		iterId = 0
-		epsilon = 0
+		V = initialV
+		V = np.argmax(self.R + self.discount * np.dot(self.T, V), axis=1)
 
 		return [policy, V, iterId, epsilon]
 
@@ -85,9 +81,9 @@ class DynamicProgramming:
 		Ouput:
 		V -- Value function: array of |S| entries'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		V = np.zeros(self.nStates)
+		#evaluate a policy by solvinga  system of linear equations V^pi = R^pi + gamma T^pi V^pi where the input is a policy of |S| entries and the output is the value function, which is an array of |S| entries
+		
+
 
 		return V
 
