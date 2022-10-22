@@ -26,8 +26,10 @@ class DynamicProgramming:
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
 		V = initialV
-		V = np.argmax(self.R + self.discount * np.dot(self.T, V), axis=1)
-
+		for i in range(nIterations):
+			V = np.max(self.R + self.discount * np.dot(self.T, V), axis=1)
+			iterId = i
+			epsilon = np.linalg.norm(V - initialV, np.inf)
 		return [policy, V, iterId, epsilon]
 
 	def policyIteration_v1(self, initialPolicy, nIterations=np.inf, tolerance=0.01):
@@ -44,12 +46,10 @@ class DynamicProgramming:
 		policy -- Policy: array of |S| entries
 		V -- Value function: array of |S| entries
 		iterId -- # of iterations peformed by modified policy iteration: scalar'''
-
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		policy = np.zeros(self.nStates)
-		V = np.zeros(self.nStates)
-		iterId = 0
+		for i in range(nIterations):
+			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(initialPolicy)
+			policy = self.extractPolicy(V)
+			iterId = i
 
 		return [policy, V, iterId]
 
@@ -64,10 +64,8 @@ class DynamicProgramming:
 		Output:
 		policy -- Policy: array of |S| entries'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		policy = np.zeros(self.nStates)
-
+		#extract policy from value function pi <-- argmax_a R^a + gamma T^a V where the input is a value function of |S| entries and the output is a policy of |S| entries
+		policy = np.argmax(self.R + self.discount * np.dot(self.T, V), axis=1)
 		return policy
 
 
@@ -82,9 +80,7 @@ class DynamicProgramming:
 		V -- Value function: array of |S| entries'''
 
 		#evaluate a policy by solvinga  system of linear equations V^pi = R^pi + gamma T^pi V^pi where the input is a policy of |S| entries and the output is the value function, which is an array of |S| entries
-		
-
-
+		V = np.linalg.solve(np.eye(self.nStates) - self.discount * np.dot(self.T, policy), self.R)
 		return V
 
 	def policyIteration_v2(self, initialPolicy, initialV, nPolicyEvalIterations=5, nIterations=np.inf, tolerance=0.01):
@@ -105,12 +101,13 @@ class DynamicProgramming:
 		iterId -- # of iterations peformed by modified policy iteration: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		policy = np.zeros(self.nStates)
-		V = np.zeros(self.nStates)
-		iterId = 0
-		epsilon = 0
+		V = initialV
+		policy = initialPolicy
+		for i in range(nIterations):
+			V = self.evaluatePolicy_IterativeUpdate(policy, V, nPolicyEvalIterations)
+			policy = self.extractPolicy(V)
+			iterId = i
+			epsilon = np.linalg.norm(V - initialV, np.inf)
 
 		return [policy, V, iterId, epsilon]
 
@@ -128,14 +125,13 @@ class DynamicProgramming:
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		V = np.zeros(self.nStates)
-		iterId = 0
-		epsilon = 0
-
+		#evaluate a policy by iterative update V^pi <-- R^pi + gamma T^pi V^pi where the input is a policy of |S| entries and the output is the value function, which is an array of |S| entries
+		V = initialV
+		for i in range(nIterations):
+			V = self.R + self.discount * np.dot(self.T, V)
+			iterId = i
+			epsilon = np.linalg.norm(V - initialV, np.inf)
 		return [V, iterId, epsilon]
-
 
 if __name__ == '__main__':
 	mdp = build_mazeMDP()
