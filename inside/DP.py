@@ -25,11 +25,15 @@ class DynamicProgramming:
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
+		#compute value iteration where V <-- max_a R^a + gamma T^a V where the input is the initial value function of |S| entries and the output is the value function of |S| entries
+		#iterate until convergence or tolerance is reached
 		V = initialV
 		for i in range(nIterations):
 			V = np.max(self.R + self.discount * np.dot(self.T, V), axis=1)
 			iterId = i
-			epsilon = np.linalg.norm(V - initialV, np.inf)
+			#compute epsilon through ||V^n-V^n+1||_inf where V^n is value function at iteration n and V^n+1 is value function at iteration n+1
+
+		policy = self.extractPolicy(V)
 		return [policy, V, iterId, epsilon]
 
 	def policyIteration_v1(self, initialPolicy, nIterations=np.inf, tolerance=0.01):
@@ -46,8 +50,11 @@ class DynamicProgramming:
 		policy -- Policy: array of |S| entries
 		V -- Value function: array of |S| entries
 		iterId -- # of iterations peformed by modified policy iteration: scalar'''
+		
+		#alternate between policy evaluation and policy imporvement
+		policy = initialPolicy
 		for i in range(nIterations):
-			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(initialPolicy)
+			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(policy)
 			policy = self.extractPolicy(V)
 			iterId = i
 
@@ -137,11 +144,11 @@ if __name__ == '__main__':
 	mdp = build_mazeMDP()
 	dp = DynamicProgramming(mdp)
 	# Test value iteration
-	[policy, V, nIterations, epsilon] = dp.valueIteration(initialV=np.zeros(dp.nStates), tolerance=0.01)
+	[policy, V, nIterations, epsilon] = dp.valueIteration(initialV=np.zeros(dp.nStates), nIterations=1000, tolerance=0.01)
 	print_policy(policy)
 	# Test policy iteration v1
-	[policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, dtype=int))
+	[policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, nIterations=1000, dtype=int))
 	print_policy(policy)
 	# Test policy iteration v2
-	[policy, V, nIterations, epsilon] = dp.policyIteration_v2(np.zeros(dp.nStates, dtype=int), np.zeros(dp.nStates), tolerance=0.01)
+	[policy, V, nIterations, epsilon] = dp.policyIteration_v2(np.zeros(dp.nStates, dtype=int), np.zeros(dp.nStates), nIterations=1000, tolerance=0.01)
 	print_policy(policy)
