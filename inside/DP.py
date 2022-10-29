@@ -32,6 +32,10 @@ class DynamicProgramming:
 			V = np.max(self.R + self.discount * np.dot(self.T, V), axis=1)
 			iterId = i
 			#compute epsilon through ||V^n-V^n+1||_inf where V^n is value function at iteration n and V^n+1 is value function at iteration n+1
+			#v at iteration n+1
+			epsilon = np.linalg.norm(V - initialV, np.inf)
+			if epsilon < tolerance:
+				break
 
 		policy = self.extractPolicy(V)
 		return [policy, V, iterId, epsilon]
