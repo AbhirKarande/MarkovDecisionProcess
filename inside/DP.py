@@ -23,16 +23,15 @@ class DynamicProgramming:
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		V = initialV
+		start = initialV
+		epsilon = np.inf
 		iterId = 0
-		epsilon = 0
-		policy = np.zeros(self.nStates)
-		while iterId < nIterations and epsilon > tolerance:
+		while epsilon > tolerance and iterId < nIterations:
 			iterId += 1
-			V = np.max(self.R + self.discount * np.dot(self.T, V), axis=1)
-			epsilon = np.max(np.abs(V - initialV))
-			initialV = V
-		policy = self.extractPolicy(V)
+			V = np.max(self.R + self.discount * np.einsum('ijk,k->ij', self.T, start), axis=0)
+			epsilon = np.max(np.abs(V - start))
+			start = V
+			policy = self.extractPolicy(V)
 
 
 		return [policy, V, iterId, epsilon]
@@ -76,9 +75,8 @@ class DynamicProgramming:
 		# for s in range(self.nStates):
 		# 	pi[s] = np.argmax(self.R[s] + self.discount * np.dot(self.T[s], V))
 		# return pi
-		policy = np.argmax(self.R[self.nActions] + self.discount * np.dot(self.T[self.nActions], V), axis=1)
-
-
+		policy = np.argmax(self.R + self.discount * np.einsum('ijk,k->ij', self.T, V), axis=0)
+		
 		return policy
 
 
@@ -90,9 +88,7 @@ class DynamicProgramming:
 		Ouput:
 		V -- Value function: array of |S| entries'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		V = np.zeros(self.nStates)
+
 
 		return V
 
