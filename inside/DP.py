@@ -53,7 +53,7 @@ class DynamicProgramming:
 		iterId = 0
 		while iterId < nIterations:
 			iterId += 1
-			V = self.evaluatePolicy_IterativeUpdate(start)
+			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(start)
 			policy = self.extractPolicy(V)
 			iterId += 1
 		return [policy, V, iterId]
@@ -88,11 +88,9 @@ class DynamicProgramming:
 		policy -- Policy: array of |S| entries
 		Ouput:
 		V -- Value function: array of |S| entries'''
-		R_pi = np.array([self.R[s, policy[s]] for s in range(self.nStates)])
-		T_pi = np.array([self.T[s, policy[s]] for s in range(self.nStates)])
-
-		start = initialV
-		epsilon
+		R_pi = np.array([self.R[policy[s]][s] for s in range(self.nStates)])
+		T_pi = np.array([self.T[policy[s]][s] for s in range(self.nStates)])
+		V = np.linalg.solve(np.eye(self.nStates) - self.discount * T_pi, R_pi)
 
 
 		return V
@@ -113,12 +111,16 @@ class DynamicProgramming:
 		iterId -- # of iterations peformed by modified policy iteration: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		policy = np.zeros(self.nStates)
-		V = np.zeros(self.nStates)
+		start = initialPolicy
+		V = initialV
 		iterId = 0
-		epsilon = 0
+		epsilon = np.inf
+		while iterId < nIterations and epsilon > tolerance:
+			iterId += 1
+			V = self.evaluatePolicy_IterativeUpdate(start, V, nPolicyEvalIterations)
+			policy = self.extractPolicy(V)
+			epsilon = np.max(np.abs(V - start))
+			start = V
 
 		return [policy, V, iterId, epsilon]
 
@@ -134,11 +136,18 @@ class DynamicProgramming:
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		V = np.zeros(self.nStates)
+		R_pi  = np.array([self.R[s, policy[s]] for s in range(self.nStates)])
+		T_pi = np.array([self.T[s, policy[s]] for s in range(self.nStates)])
+		start = initialV
+
 		iterId = 0
-		epsilon = 0
+		while iterId < nIterations:
+			iterId += 1
+			V = R_pi + self.discount * np.dot(T_pi, start)
+			epsilon = np.max(np.abs(V - start))
+			start = V
+
+
 
 		return [V, iterId, epsilon]
 
