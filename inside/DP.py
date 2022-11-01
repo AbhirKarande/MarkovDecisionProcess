@@ -49,12 +49,13 @@ class DynamicProgramming:
 		V -- Value function: array of |S| entries
 		iterId -- # of iterations peformed by modified policy iteration: scalar'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		policy = np.zeros(self.nStates)
-		V = np.zeros(self.nStates)
+		start = initialPolicy
 		iterId = 0
-
+		while iterId < nIterations:
+			iterId += 1
+			V = self.evaluatePolicy_IterativeUpdate(start)
+			policy = self.extractPolicy(V)
+			iterId += 1
 		return [policy, V, iterId]
 
 
@@ -87,7 +88,11 @@ class DynamicProgramming:
 		policy -- Policy: array of |S| entries
 		Ouput:
 		V -- Value function: array of |S| entries'''
+		R_pi = np.array([self.R[s, policy[s]] for s in range(self.nStates)])
+		T_pi = np.array([self.T[s, policy[s]] for s in range(self.nStates)])
 
+		start = initialV
+		epsilon
 
 
 		return V
