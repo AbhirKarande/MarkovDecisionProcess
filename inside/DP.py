@@ -56,6 +56,8 @@ class DynamicProgramming:
 			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(start)
 			policy = self.extractPolicy(V)
 			iterId += 1
+			print(iterId)
+			print(epsilon)
 		return [policy, V, iterId]
 
 
@@ -121,6 +123,8 @@ class DynamicProgramming:
 			policy = self.extractPolicy(V)
 			epsilon = np.max(np.abs(V - start))
 			start = V
+			print(iterId)
+			print(epsilon)
 
 		return [policy, V, iterId, epsilon]
 
@@ -135,7 +139,7 @@ class DynamicProgramming:
 		V -- Value function: array of |S| entries
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
-
+		print('reached evaluatePolicy_IterativeUpdate')
 		R_pi  = np.array([self.R[s, policy[s]] for s in range(self.nStates)])
 		T_pi = np.array([self.T[s, policy[s]] for s in range(self.nStates)])
 		start = initialV
@@ -158,9 +162,20 @@ if __name__ == '__main__':
 	# Test value iteration
 	[policy, V, nIterations, epsilon] = dp.valueIteration(initialV=np.zeros(dp.nStates), tolerance=0.01)
 	print_policy(policy)
+	print('Value function: {}'.format(V))
+	print('# of iterations: {}'.format(nIterations))
+	print('epsilon: {}'.format(epsilon))
 	# Test policy iteration v1
-	[policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, dtype=int))
+	[policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, dtype=int), nIterations=1000)
 	print_policy(policy)
+	print('Value function: {}'.format(V))
+	print('# of iterations: {}'.format(nIterations))
+
 	# Test policy iteration v2
-	[policy, V, nIterations, epsilon] = dp.policyIteration_v2(np.zeros(dp.nStates, dtype=int), np.zeros(dp.nStates), tolerance=0.01)
+	[policy, V, nIterations, epsilon] = dp.policyIteration_v2(np.zeros(dp.nStates, dtype=int), np.zeros(dp.nStates), nIterations=1000, tolerance=0.01)
 	print_policy(policy)
+	print('Value function: {}'.format(V))
+	print('# of iterations: {}'.format(nIterations))
+	print('epsilon: {}'.format(epsilon))
+
+	
