@@ -33,7 +33,6 @@ class DynamicProgramming:
 			start = V
 			policy = self.extractPolicy(V)
 
-
 		return [policy, V, iterId, epsilon]
 
 	def policyIteration_v1(self, initialPolicy, nIterations=np.inf, tolerance=0.01):
@@ -51,13 +50,13 @@ class DynamicProgramming:
 
 		start = initialPolicy
 		iterId = 0
-		while iterId < nIterations:
+		same = False
+		while (not same) and iterId < nIterations:
 			iterId += 1
 			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(start)
 			policy = self.extractPolicy(V)
 			iterId += 1
-			print(iterId)
-			print(epsilon)
+			same = np.array_equal(start,policy)
 		return [policy, V, iterId]
 
 
@@ -82,7 +81,16 @@ class DynamicProgramming:
 		
 		return policy
 
+	def selectPolicy(self, T, policy):
+		T_pi = np.copy(T[0])
+		for s in range(self.nStates):
+			T_pi[s] = T[policy[s]][s]
+		return T_pi
+	def policyT(self, policy):
+		return self.selectPolicy(self.T, policy)
 
+	def policyR(self, policy):
+		return self.selectPolicy(self.R, policy)
 	def evaluatePolicy_SolvingSystemOfLinearEqs(self, policy):
 		'''Evaluate a policy by solving a system of linear equations
 		V^pi = R^pi + gamma T^pi V^pi
@@ -90,13 +98,30 @@ class DynamicProgramming:
 		policy -- Policy: array of |S| entries
 		Ouput:
 		V -- Value function: array of |S| entries'''
-		R_pi = np.array([self.R[policy[s]][s] for s in range(self.nStates)])
-		T_pi = np.array([self.T[policy[s]][s] for s in range(self.nStates)])
-		V = np.linalg.solve(np.eye(self.nStates) - self.discount * T_pi, R_pi)
+		
+		#V^pi is the value function for policy pi
+		#R^pi is the reward matrix for policy pi
+		#T^pi is the transition matrix for policy pi
+		#V^pi = R^pi + gamma T^pi V^pi
+		T_pi = self.policyT(policy)
+		R_pi = self.policyR(policy)
+		I = np.eye(self.nStates)
+		V = np.linalg.solve(I - self.discount * T_pi, R_pi)
+
 
 
 		return V
-
+	def actionValue(self, V):
+		'''Compute the action-value function Q(s,a) = R^a + gamma T^a V
+		Inputs:
+		V -- Value function: array of |S| entries
+		Output:
+		Q -- Action-value function: array of |S|x|A| entries'''
+		Q = np.zeros((self.nActions, self.nStates))
+		for a in range(self.nActions):
+			for s in range(self.nStates):
+				Q[a,s] = (self.T[a,s]).dot(self.R[a,s] + V * self.discount)
+		return Q
 	def policyIteration_v2(self, initialPolicy, initialV, nPolicyEvalIterations=5, nIterations=np.inf, tolerance=0.01):
 		'''Modified policy iteration procedure: alternate between
 		partial policy evaluation (repeat a few times V^pi <-- R^pi + gamma T^pi V^pi)
@@ -113,22 +138,22 @@ class DynamicProgramming:
 		iterId -- # of iterations peformed by modified policy iteration: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 
-		start = initialPolicy
+		policy = initialPolicy
 		V = initialV
 		iterId = 0
 		epsilon = np.inf
+		same = False
 		while iterId < nIterations and epsilon > tolerance:
 			iterId += 1
-			V = self.evaluatePolicy_IterativeUpdate(start, V, nPolicyEvalIterations)
+			V = self.evaluatePolicy_IterativeUpdate(policy, V, nPolicyEvalIterations, tolerance=tolerance)
 			policy = self.extractPolicy(V)
-			epsilon = np.max(np.abs(V - start))
-			start = V
-			print(iterId)
-			print(epsilon)
-
+			Q = self.actionValue(V)
+			V2 = Q.max(axis=0)
+			epsilon = (np.fabs(V2-V)).max()
+		V = self.evaluatePolicy_IterativeUpdate(policy, V, nPolicyEvalIterations, tolerance=tolerance)
 		return [policy, V, iterId, epsilon]
 
-	def evaluatePolicy_IterativeUpdate(self, policy, initialV, nIterations=np.inf):
+	def evaluatePolicy_IterativeUpdate(self, policy, initialV, nIterations=np.inf, tolerance=0.01):
 		'''Partial policy evaluation:
 		Repeat V^pi <-- R^pi + gamma T^pi V^pi
 		Inputs:
@@ -140,20 +165,20 @@ class DynamicProgramming:
 		iterId -- # of iterations performed: scalar
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 		print('reached evaluatePolicy_IterativeUpdate')
-		R_pi  = np.array([self.R[s, policy[s]] for s in range(self.nStates)])
-		T_pi = np.array([self.T[s, policy[s]] for s in range(self.nStates)])
-		start = initialV
 
+		start = initialV
+		epsilon = np.inf
 		iterId = 0
-		while iterId < nIterations:
+		while iterId < nIterations and epsilon > tolerance:
 			iterId += 1
-			V = R_pi + self.discount * np.dot(T_pi, start)
-			epsilon = np.max(np.abs(V - start))
+			Q = self.actionValue(start)
+			V = self.selectPolicy(Q, policy)
+			
+			epsilon = (np.fabs(V - start)).max()
 			start = V
 
 
-
-		return [V, iterId, epsilon]
+		return V
 
 
 if __name__ == '__main__':
@@ -165,17 +190,19 @@ if __name__ == '__main__':
 	print('Value function: {}'.format(V))
 	print('# of iterations: {}'.format(nIterations))
 	print('epsilon: {}'.format(epsilon))
+	print('done with value iteration')
 	# Test policy iteration v1
-	[policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, dtype=int), nIterations=1000)
-	print_policy(policy)
-	print('Value function: {}'.format(V))
-	print('# of iterations: {}'.format(nIterations))
+	# [policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, dtype=int))
+	# print_policy(policy)
+	# print('Value function: {}'.format(V))
+	# print('# of iterations: {}'.format(nIterations))
 
 	# Test policy iteration v2
-	[policy, V, nIterations, epsilon] = dp.policyIteration_v2(np.zeros(dp.nStates, dtype=int), np.zeros(dp.nStates), nIterations=1000, tolerance=0.01)
+	[policy, V, nIterations, epsilon] = dp.policyIteration_v2(np.zeros(dp.nStates, dtype=int), np.zeros(dp.nStates), tolerance=0.01)
 	print_policy(policy)
 	print('Value function: {}'.format(V))
 	print('# of iterations: {}'.format(nIterations))
 	print('epsilon: {}'.format(epsilon))
+	print('done with policy iteration')
 
 	
