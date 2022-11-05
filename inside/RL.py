@@ -43,12 +43,15 @@ class ReinforcementLearning:
 		Q -- final Q function (|A|x|S| array)
 		policy -- final policy
 		'''
-
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		Q = np.zeros([self.mdp.nActions,self.mdp.nStates])
-		policy = np.zeros(self.mdp.nStates,int)
-
+		nActions = self.mdp.nActions
+		nStates = self.mdp.nStates
+		discount = self.mdp.discount
+		Q = np.zeros((nActions,nStates))
+		N = np.zeros((nActions,nStates))
+		cumReward = np.zeros(nEpisodes)
+		
+		
+		
 		return [Q,policy]
 
 	def OffPolicyMC(self, nEpisodes, epsilon=0.0):
@@ -62,10 +65,7 @@ class ReinforcementLearning:
 		policy -- final policy
 		'''
 
-		# temporary values to ensure that the code compiles until this
-		# function is coded
-		Q = np.zeros([self.mdp.nActions,self.mdp.nStates])
-		policy = np.zeros(self.mdp.nStates,int)
+		
 
 		return [Q,policy]
 
