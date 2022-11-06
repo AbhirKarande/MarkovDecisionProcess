@@ -46,6 +46,7 @@ class ReinforcementLearning:
 		#perform q learning
 		Q = np.zeros((self.mdp.nActions, self.mdp.nStates))
 		policy = np.zeros((self.mdp.nStates))
+		cumReward = []
 		for i in range(nEpisodes):
 			state = np.random.randint(0, self.mdp.nStates)
 			while state != self.mdp.nStates - 1:
@@ -56,6 +57,7 @@ class ReinforcementLearning:
 					action = np.argmax(Q[:, state])
 				#sample reward and next state
 				[reward, nextState] = self.sampleRewardAndNextState(state, action)
+				cumReward.append(reward)
 				#update Q
 				Q[action, state] = Q[action, state] + 0.1 * (reward + self.mdp.discount * np.max(Q[:, nextState]) - Q[action, state])
 				#update state
@@ -129,7 +131,7 @@ if __name__ == '__main__':
 	rl = ReinforcementLearning(mdp, np.random.normal)
 
 	# Test Q-learning
-	[Q, policy] = rl.OffPolicyTD(nEpisodes=500, epsilon=0.1)
+	[Q, policy] = rl.OffPolicyTD(nEpisodes=500, epsilon=0.3)
 	print_policy(policy)
 	print(Q)
 	
