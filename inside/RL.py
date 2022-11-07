@@ -85,6 +85,7 @@ class ReinforcementLearning:
 		'''
 		episode = []
 		state = np.random.randint(0, self.mdp.nStates)
+		cumReward = []
 		while state != self.mdp.nStates - 1:
 			#choose action
 			if np.random.rand() < epsilon:
@@ -95,9 +96,12 @@ class ReinforcementLearning:
 			[reward, nextState] = self.sampleRewardAndNextState(state, action)
 			#update episode
 			episode.append((state, action, reward))
+			cumReward.append(reward)
 			#update state
 			state = nextState
-		return episode
+		#get the total reward for the episode
+		totalReward = np.sum(cumReward)
+		return episode, totalReward
 	def OffPolicyMC(self, nEpisodes, epsilon=0.0):
 		'''
 		Off-policy MC algorithm with epsilon-soft behavior policy
@@ -111,9 +115,11 @@ class ReinforcementLearning:
 		#perform MC
 		Q = np.zeros((self.mdp.nActions, self.mdp.nStates))
 		policy = np.zeros((self.mdp.nStates))
+		cumReward = []
 		for i in range(nEpisodes):
 			#generate episode
-			episode = self.generateEpisode(epsilon)
+			episode, reward = self.generateEpisode(epsilon)
+			cumReward.append(reward)
 			#calculate returns
 			G = 0
 			for j in range(len(episode) - 1, -1, -1):
@@ -122,7 +128,16 @@ class ReinforcementLearning:
 				Q[episode[j][1], episode[j][0]] = Q[episode[j][1], episode[j][0]] + 0.1 * (G - Q[episode[j][1], episode[j][0]])
 		#update policy
 		policy = np.argmax(Q, axis=0)
-		
+		#produce a figure where the x-axis indicates the number of episodes and the y-axis indicates the cumulative rewards per episode
+		cumReward = np.cumsum(cumReward)
+		#x axis is number of episodes
+		#y axis is cumulative rewards per episode
+		plt.plot(cumReward)
+		plt.xlabel('Number of Episodes')
+		plt.ylabel('Cumulative Rewards per Episode')
+		plt.show()
+
+
 
 		return [Q,policy]
 
@@ -131,7 +146,7 @@ if __name__ == '__main__':
 	rl = ReinforcementLearning(mdp, np.random.normal)
 
 	# Test Q-learning
-	[Q, policy] = rl.OffPolicyTD(nEpisodes=500, epsilon=0.3)
+	[Q, policy] = rl.OffPolicyTD(nEpisodes=500, epsilon=0.5)
 	print_policy(policy)
 	print(Q)
 	

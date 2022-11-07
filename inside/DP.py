@@ -48,15 +48,17 @@ class DynamicProgramming:
 		V -- Value function: array of |S| entries
 		iterId -- # of iterations peformed by modified policy iteration: scalar'''
 
-		start = initialPolicy
+		policy = initialPolicy
+		V = np.zeros(self.nStates)
 		iterId = 0
 		same = False
 		while (not same) and iterId < nIterations:
 			iterId += 1
-			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(start)
+			oldPolicy = np.copy(policy)
+			V = self.evaluatePolicy_SolvingSystemOfLinearEqs(policy)
 			policy = self.extractPolicy(V)
 			iterId += 1
-			same = np.array_equal(start,policy)
+			same = np.array_equal(oldPolicy,policy)
 		return [policy, V, iterId]
 
 
@@ -106,7 +108,7 @@ class DynamicProgramming:
 		T_pi = self.policyT(policy)
 		R_pi = self.policyR(policy)
 		I = np.eye(self.nStates)
-		V = np.linalg.solve(I - self.discount * T_pi, R_pi)
+		V = np.linalg.inv(I - T_pi * self.discount).dot(R_pi)
 
 
 
@@ -122,7 +124,7 @@ class DynamicProgramming:
 			for s in range(self.nStates):
 				Q[a,s] = (self.T[a,s]).dot(self.R[a,s] + V * self.discount)
 		return Q
-	def policyIteration_v2(self, initialPolicy, initialV, nPolicyEvalIterations=5, nIterations=np.inf, tolerance=0.01):
+	def policyIteration_v2(self, initialPolicy, initialV, nPolicyEvalIterations=10, nIterations=np.inf, tolerance=0.01):
 		'''Modified policy iteration procedure: alternate between
 		partial policy evaluation (repeat a few times V^pi <-- R^pi + gamma T^pi V^pi)
 		and policy improvement (pi <-- argmax_a R^a + gamma T^a V^pi)
@@ -166,16 +168,16 @@ class DynamicProgramming:
 		epsilon -- ||V^n-V^n+1||_inf: scalar'''
 		print('reached evaluatePolicy_IterativeUpdate')
 
-		start = initialV
+		V = initialV
 		epsilon = np.inf
 		iterId = 0
-		while iterId < nIterations and epsilon > tolerance:
+		while (iterId < nIterations and epsilon > tolerance):
+			V_start = np.copy(V)
 			iterId += 1
-			Q = self.actionValue(start)
+			Q = self.actionValue(V)
 			V = self.selectPolicy(Q, policy)
 			
-			epsilon = (np.fabs(V - start)).max()
-			start = V
+			epsilon = (np.fabs(V - V_start)).max()
 
 
 		return V
@@ -185,13 +187,13 @@ if __name__ == '__main__':
 	mdp = build_mazeMDP()
 	dp = DynamicProgramming(mdp)
 	# Test value iteration
-	[policy, V, nIterations, epsilon] = dp.valueIteration(initialV=np.zeros(dp.nStates), tolerance=0.01)
-	print_policy(policy)
-	print('Value function: {}'.format(V))
-	print('# of iterations: {}'.format(nIterations))
-	print('epsilon: {}'.format(epsilon))
-	print('done with value iteration')
-	# Test policy iteration v1
+	# [policy, V, nIterations, epsilon] = dp.valueIteration(initialV=np.zeros(dp.nStates), tolerance=0.01)
+	# print_policy(policy)
+	# print('Value function: {}'.format(V))
+	# print('# of iterations: {}'.format(nIterations))
+	# print('epsilon: {}'.format(epsilon))
+	# print('done with value iteration')
+	# # Test policy iteration v1
 	# [policy, V, nIterations] = dp.policyIteration_v1(np.zeros(dp.nStates, dtype=int))
 	# print_policy(policy)
 	# print('Value function: {}'.format(V))
